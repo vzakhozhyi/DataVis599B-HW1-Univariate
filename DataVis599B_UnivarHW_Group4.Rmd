@@ -1,0 +1,66 @@
+---
+title: 'DataVis 599 B: TabularData Univariate Homework'
+author: 'Group 4: Haotian Bu, Aishe Memetova, Jon White, Vitalii Zakhozhyi'
+output:
+  html_document:
+    df_print: paged
+---
+
+Using the Seattle Sound Transit Data of October-November 2015, we will try to answer whether riders in Seattle still pay the transit fare using cash.
+
+**Loading neccessary packages, calling dataset and preparing it for analysis**
+
+
+```{r linkdata}
+library(ggplot2)
+library (dplyr)
+library(scales)
+
+linkdata <- read.csv("https://raw.githubusercontent.com/jwhite00/VisualAnalytics_2_tabularData/master/data/newLinkData.csv", stringsAsFactors=FALSE)
+```
+
+**Finalizing the data frame for ggplot**
+
+Getting rid of missing values, calculating frequences, and subsetting
+
+```{r clean}
+linkdata_clean <- linkdata %>%
+  filter(faretype != "#NULL!")
+
+absol_ft=table(linkdata_clean$faretype, exclude = 'nothing')
+names(absol_ft)[2]='Other'
+ft_freq=prop.table(absol_ft)*100
+ft_freq_df=as.data.frame(ft_freq) 
+names(ft_freq_df)=c("faretype","pct")
+ft_freq_df_ord=ft_freq_df[order(-ft_freq_df$pct), ]
+```
+
+**Building a bar plot using ggplot**
+
+```{r barplot}
+cols <- ifelse(ft_freq_df_ord$faretype == "Cash", "red","steelblue")
+
+base = ggplot(ft_freq_df_ord, aes(faretype, pct))
+ft_plot1 = base + geom_bar(stat="identity", fill=cols, width = 0.75)
+ft_plot2 = ft_plot1 + labs(title='Do riders still use cash to pay a transit fare in Seattle?',
+                           x ='Type of fare',
+                           y = 'Percentage of riders',
+                           caption = 'Source: Seattle Sound Transit Data, Oct-Nov 2015')
+ft_plot3 = ft_plot2 + coord_flip() +
+                      scale_y_continuous(limits=c(0,55),
+                                         breaks = seq(0, 55, by = 5), 
+                                         labels=scales::unit_format(suffix = '%')) +
+                      scale_x_discrete(limits=ft_freq_df_ord$faretype)
+ft_plot4 = ft_plot3 + geom_text(aes(y = pct,
+                                label = paste0(round(pct,2), '%')), 
+                                hjust= -0.15, 
+                                size = 3)
+ft_plot5 = ft_plot4 + theme(panel.background = element_rect(fill = "grey95", color = "black"),
+                            plot.title = element_text(size = 15, hjust = 0.5),
+                            plot.caption = element_text(hjust = 1, vjust = -1.2),
+                            axis.title.y = element_text(size = 12, hjust = 0.5, vjust = 1.75),
+                            axis.title.x = element_text(size = 12, hjust = 0.5, vjust = -1.25))
+ft_plot5
+```
+
+
